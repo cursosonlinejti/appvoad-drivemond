@@ -1,0 +1,55 @@
+version: "3.7"
+services:
+## ---------------------------OREEAMD--------------------------- ##
+  appvoad-painel:
+    # Substituímos a imagem por um build customizado
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: app-voad-image:latest ## Versão do APP VOAD
+    volumes:
+      - appvoad-painel:/var/www/html
+      - appvoad-painel_php:/usr/local/etc/php
+    networks:
+      - roosisrede ## Nome da rede interna
+    environment:
+      ## Dados do Mysql
+      - WORDPRESS_DB_NAME=appvoad_painel
+      - WORDPRESS_DB_HOST=mysql
+      - WORDPRESS_DB_PORT=3306
+      - WORDPRESS_DB_USER=root
+      - WORDPRESS_DB_PASSWORD=fe0b7fa8e9add8bb881eab745412fa38
+      ## Redis
+      - WP_REDIS_HOST=redis
+      - WP_REDIS_PORT=6379
+      - WP_REDIS_DATABASE=6
+      ## Url do Wordpress
+      - VIRTUAL_HOST=appvoad.servicos.top
+      ## Localização
+      - WP_LOCALE=pt_BR
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.appvoad-painel.rule=Host(`appvoad.servicos.top`)
+        - traefik.http.routers.appvoad-painel.entrypoints=websecure
+        - traefik.http.routers.appvoad-painel.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.appvoad-painel.service=appvoad-painel
+        - traefik.http.services.appvoad-painel.loadbalancer.server.port=80
+        - traefik.http.services.appvoad-painel.loadbalancer.passHostHeader=true
+## --------------------------- OREEAMD --------------------------- ##
+volumes:
+  appvoad-painel:
+    external: true
+    name: appvoad-painel
+  appvoad-painel_php:
+    external: true
+    name: appvoad-painel_php
+networks:
+  roosisrede: ## Nome da rede interna
+    name: roosisrede ## Nome da rede interna
+    external: true
